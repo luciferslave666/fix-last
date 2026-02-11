@@ -9,6 +9,7 @@ use App\Http\Controllers\SeleksiController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -23,7 +24,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/biodata', [BiodataController::class, 'index'])->name('biodata.index');
-    Route::put('/biodata', [BiodataController::class, 'update'])->name('biodata.update');
     Route::resource('lowongan', LowonganController::class);
     Route::get('/cari-kerja', [PelamarJobController::class, 'index'])->name('cari.kerja');
     Route::get('/lowongan/{lowongan}', [PelamarJobController::class, 'show'])->name('lowongan.show');
@@ -34,6 +34,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/lowongan/{lowongan}/pelamar', [SeleksiController::class, 'index'])->name('seleksi.index');
     Route::get('/seleksi/{id}', [SeleksiController::class, 'show'])->name('seleksi.show');
     Route::put('/seleksi/{id}', [SeleksiController::class, 'update'])->name('seleksi.update');
+    Route::patch('/biodata', [BiodataController::class, 'update'])->name('biodata.update');
 });
+
+Route::post('/check-email', [RegisteredUserController::class, 'checkEmail'])->name('check.email');
 
 require __DIR__.'/auth.php';

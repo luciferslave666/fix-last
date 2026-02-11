@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         // ==========================================
         // PERBAIKAN: Menghapus 'name' dari User::create
         $pelamar = User::create([
+            'name' => 'Sendi Dwi Putra',
             'email' => 'sendi@student.unikom.ac.id',
             'password' => Hash::make('password'),
             'role' => 'pelamar',
@@ -44,6 +45,7 @@ class DatabaseSeeder extends Seeder
         // 2. AKUN UMKM 1 (Soto Betawi Asli)
         // ==========================================
         $umkm1 = User::create([
+            'name' => 'Soto Betawi Asli',
             'email' => 'soto@betawi.com',
             'password' => Hash::make('password'),
             'role' => 'umkm',

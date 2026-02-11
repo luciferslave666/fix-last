@@ -8,48 +8,43 @@ use Illuminate\Support\Facades\Storage;
 
 class BiodataController extends Controller
 {
-    // Menampilkan Form Edit Profil
-public function index()
+    // MENAMPILKAN FORM BIODATA
+    public function index()
     {
         $user = Auth::user();
 
-        // --- TAMBAHKAN KODE INI SEMENTARA ---
-        // Kita cek apa isi role dan relasinya
-        // dd() akan menghentikan program dan menampilkan data
-        // dd([
-        //     'role_user' => $user->role,
-        //     'apakah_pelamar' => $user->role === 'pelamar',
-        //     'apakah_umkm' => $user->role === 'umkm',
-        //     'data_profil_pelamar' => $user->profilPelamar,
-        //     'data_profil_umkm' => $user->profilUmkm
-        // ]);
-        // -------------------------------------
-
+        // 1. Cek Role Pelamar
         if ($user->role === 'pelamar') {
             $profil = $user->profilPelamar;
-            // Pencegahan error jika profil belum terbuat (Data User Lama)
+            
+            // Auto-create jika belum ada (Safe guard)
             if (!$profil) {
-                return "Error: Data Profil Pelamar tidak ditemukan di database. Coba Register user baru.";
+                $user->profilPelamar()->create(['user_id' => $user->id, 'nama_lengkap' => $user->name, 'no_hp' => '-', 'jenis_kelamin' => 'L', 'alamat' => '-']);
+                $profil = $user->profilPelamar;
             }
+            
+            // Panggil View khusus Pelamar
             return view('biodata.pelamar', compact('user', 'profil'));
         } 
         
+        // 2. Cek Role UMKM
         elseif ($user->role === 'umkm') {
             $profil = $user->profilUmkm;
-             // Pencegahan error jika profil belum terbuat
+            
+            // Auto-create jika belum ada (Safe guard)
             if (!$profil) {
-                return "Error: Data Profil UMKM tidak ditemukan di database. Coba Register user baru.";
+                $user->profilUmkm()->create(['user_id' => $user->id, 'nama_usaha' => 'Nama Usaha', 'pemilik' => $user->name, 'alamat' => '-', 'no_hp' => '-']);
+                $profil = $user->profilUmkm;
             }
+
+            // Panggil View khusus UMKM
             return view('biodata.umkm', compact('user', 'profil'));
         }
 
-        // Jika sampai sini, berarti role tidak dikenali
-        return "Error: Role User Anda terbaca sebagai: " . $user->role . ". Seharusnya 'pelamar' atau 'umkm'.";
-        
-        // return redirect()->route('dashboard'); // <-- Komentar dulu baris ini
+        return redirect()->route('dashboard');
     }
 
-    // Menyimpan Perubahan Profil
+    // MENYIMPAN PERUBAHAN
     public function update(Request $request)
     {
         $user = Auth::user();
@@ -61,59 +56,73 @@ public function index()
         }
     }
 
-    // Logika Khusus Update Pelamar (Termasuk Upload CV & Foto)
-    private function updatePelamar($request, $user)
+    // LOGIKA PELAMAR
+private function updatePelamar($request, $user)
     {
+        // Validasi kita buat 'nullable' (boleh kosong) untuk file, 
+        // karena user mungkin cuma mau update nama, tidak update foto/cv.
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'no_hp' => 'required|string',
-            'pendidikan_terakhir' => 'required|string',
-            'alamat' => 'required|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'cv' => 'nullable|mimes:pdf|max:2048', // Sesuai UC-05 Upload Dokumen
+            'no_hp'        => 'required|string',
+            'jenis_kelamin'=> 'required|in:L,P',
+            'alamat'       => 'required|string',
+            
+            // Validasi File: Maksimal 5MB (5120 KB) biar tidak gampang error
+            'foto'         => 'nullable|image|max:5120', 
+            'cv'           => 'nullable|mimes:pdf|max:5120',
         ]);
 
-        $data = $request->only(['nama_lengkap', 'nik', 'tempat_lahir', 'tanggal_lahir', 'alamat', 'no_hp', 'pendidikan_terakhir', 'pengalaman_kerja']);
+        // Ambil data teks
+        $data = $request->only([
+            'nama_lengkap', 'no_hp', 'jenis_kelamin', 
+            'pendidikan_terakhir', 'skill', 'pengalaman', 'alamat'
+        ]);
 
-        // Handle Upload Foto
+        // 1. LOGIKA UPLOAD FOTO
         if ($request->hasFile('foto')) {
-            // Hapus foto lama jika ada
-            if ($user->profilPelamar->foto) {
-                Storage::delete($user->profilPelamar->foto);
+            // Hapus yang lama kalau ada & filenya eksis
+            if ($user->profilPelamar->foto && Storage::exists('public/' . $user->profilPelamar->foto)) {
+                Storage::delete('public/' . $user->profilPelamar->foto);
             }
+            // Simpan yang baru
             $data['foto'] = $request->file('foto')->store('foto_profil', 'public');
         }
 
-        // Handle Upload CV (UC-05)
+        // 2. LOGIKA UPLOAD CV
         if ($request->hasFile('cv')) {
-            if ($user->profilPelamar->cv) {
-                Storage::delete($user->profilPelamar->cv);
+            // Hapus yang lama kalau ada & filenya eksis
+            if ($user->profilPelamar->cv && Storage::exists('public/' . $user->profilPelamar->cv)) {
+                Storage::delete('public/' . $user->profilPelamar->cv);
             }
-            $data['cv'] = $request->file('cv')->store('dokumen_cv', 'public');
+            // Simpan yang baru
+            $data['cv'] = $request->file('cv')->store('cv_pelamar', 'public');
         }
 
-        $user->profilPelamar->update($data);
+        // Update Database
+        // Kita gunakan update pada relasi untuk memastikan ID yang benar
+        $user->profilPelamar()->update($data);
 
         return redirect()->back()->with('success', 'Profil pelamar berhasil diperbarui!');
     }
 
-    // Logika Khusus Update UMKM
+    // LOGIKA UMKM
     private function updateUmkm($request, $user)
     {
         $request->validate([
             'nama_usaha' => 'required|string|max:255',
             'pemilik' => 'required|string',
-            'bidang_usaha' => 'required|string',
+            'bidang_usaha' => 'nullable|string',
             'alamat' => 'required|string',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'no_hp' => 'required|string',
+            'deskripsi' => 'nullable|string',
+            'logo' => 'nullable|image|max:2048',
         ]);
 
         $data = $request->only(['nama_usaha', 'pemilik', 'bidang_usaha', 'alamat', 'no_hp', 'deskripsi']);
 
-        // Handle Upload Logo
         if ($request->hasFile('logo')) {
-            if ($user->profilUmkm->logo) {
-                Storage::delete($user->profilUmkm->logo);
+            if ($user->profilUmkm->logo && Storage::exists('public/' . $user->profilUmkm->logo)) {
+                Storage::delete('public/' . $user->profilUmkm->logo);
             }
             $data['logo'] = $request->file('logo')->store('logo_umkm', 'public');
         }

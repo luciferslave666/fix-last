@@ -2,14 +2,62 @@
     <div x-data="{ 
         step: 1, 
         role: null,
-        nextStep() { 
+        isLoading: false,
+        emailError: '',
+
+        async nextStep() { 
+            // Validasi Step 1
             if(this.step === 1) {
-                // Validasi sederhana step 1 di frontend
-                if(!document.getElementById('name').value || !document.getElementById('email').value || !document.getElementById('password').value) {
-                    alert('Mohon lengkapi data akun terlebih dahulu.');
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirm = document.getElementById('password_confirmation').value;
+
+                // 1. Cek Kosong
+                if(!name || !email || !password) {
+                    alert('Mohon lengkapi semua data akun.');
                     return;
                 }
+
+                // 2. Cek Password Match
+                if(password !== confirm) {
+                    alert('Konfirmasi password tidak cocok.');
+                    return;
+                }
+
+                // 3. CEK EMAIL KE SERVER (AJAX)
+                this.isLoading = true;
+                this.emailError = '';
+
+                try {
+                    const response = await fetch('{{ route('check.email') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                        },
+                        body: JSON.stringify({ email: email })
+                    });
+                    
+                    const data = await response.json();
+
+                    if (data.exists) {
+                        this.emailError = 'Email ini sudah terdaftar. Gunakan email lain atau Login.';
+                        this.isLoading = false;
+                        return; // Stop, jangan lanjut step
+                    }
+
+                } catch (error) {
+                    console.error('Error checking email:', error);
+                    alert('Terjadi kesalahan koneksi. Silakan coba lagi.');
+                    this.isLoading = false;
+                    return;
+                }
+
+                this.isLoading = false;
             }
+            
+            // Jika lolos semua, lanjut step
             this.step++; 
         },
         prevStep() { this.step--; },
@@ -35,36 +83,34 @@
 
         <form method="POST" action="{{ route('register') }}">
             @csrf
-
             <input type="hidden" name="role" :value="role">
 
             <div x-show="step === 1" class="space-y-4" x-transition>
                 <div>
                     <x-input-label for="name" :value="__('Nama Lengkap')" />
                     <x-text-input id="name" class="block mt-1 w-full pl-4" type="text" name="name" :value="old('name')" required autofocus />
-                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
                 </div>
 
                 <div>
                     <x-input-label for="email" :value="__('Email')" />
                     <x-text-input id="email" class="block mt-1 w-full pl-4" type="email" name="email" :value="old('email')" required />
+                    <p x-show="emailError" x-text="emailError" class="text-sm text-red-600 mt-2 font-bold"></p>
                     <x-input-error :messages="$errors->get('email')" class="mt-2" />
                 </div>
 
                 <div>
                     <x-input-label for="password" :value="__('Password')" />
                     <x-text-input id="password" class="block mt-1 w-full pl-4" type="password" name="password" required />
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
                 </div>
 
                 <div>
                     <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
                     <x-text-input id="password_confirmation" class="block mt-1 w-full pl-4" type="password" name="password_confirmation" required />
-                    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                 </div>
 
-                <button type="button" @click="nextStep()" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 transition-all mt-6">
-                    Lanjut Pilih Peran →
+                <button type="button" @click="nextStep()" :disabled="isLoading" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!isLoading">Lanjut Pilih Peran →</span>
+                    <span x-show="isLoading">Memeriksa Email...</span>
                 </button>
                 
                 <div class="text-center mt-4">
@@ -102,33 +148,33 @@
                 
                 <div>
                     <x-input-label for="no_hp" :value="__('No WhatsApp / HP')" />
-                    <x-text-input id="no_hp" class="block mt-1 w-full" type="text" name="no_hp" required placeholder="0812..." />
+                    <x-text-input id="no_hp" class="block mt-1 w-full pl-4" type="text" name="no_hp" required placeholder="0812..." />
                 </div>
                 <div>
                     <x-input-label for="alamat" :value="__('Alamat Lengkap')" />
-                    <textarea id="alamat" name="alamat" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="2" required placeholder="Jalan..."></textarea>
+                    <textarea id="alamat" name="alamat" class="block mt-1 w-full border-stone-300 focus:border-orange-500 focus:ring-orange-500 rounded-xl shadow-sm transition-colors text-stone-700 pl-4" rows="2" required placeholder="Jalan..."></textarea>
                 </div>
 
                 <template x-if="role === 'pelamar'">
                     <div class="space-y-4">
                         <div>
                             <x-input-label for="pendidikan_terakhir" :value="__('Pendidikan Terakhir')" />
-                            <x-text-input id="pendidikan_terakhir" class="block mt-1 w-full" type="text" name="pendidikan_terakhir" placeholder="Contoh: SMA / S1" />
+                            <x-text-input id="pendidikan_terakhir" class="block mt-1 w-full pl-4" type="text" name="pendidikan_terakhir" placeholder="Contoh: SMA / S1" />
                         </div>
                         <div>
                             <x-input-label for="skill" :value="__('Keahlian (Skill)')" />
-                            <x-text-input id="skill" class="block mt-1 w-full" type="text" name="skill" placeholder="Contoh: Barista, Stir Mobil" />
+                            <x-text-input id="skill" class="block mt-1 w-full pl-4" type="text" name="skill" placeholder="Contoh: Barista, Stir Mobil" />
                         </div>
                         <div>
                              <x-input-label for="jenis_kelamin" :value="__('Jenis Kelamin')" />
-                             <select name="jenis_kelamin" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                             <select name="jenis_kelamin" class="block mt-1 w-full border-stone-300 focus:border-orange-500 focus:ring-orange-500 rounded-xl shadow-sm pl-4">
                                <option value="L">Laki-laki</option>
                                <option value="P">Perempuan</option>
                              </select>
                         </div>
                         <div>
                             <x-input-label for="pengalaman" :value="__('Pengalaman (Opsional)')" />
-                            <textarea name="pengalaman" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="2"></textarea>
+                            <textarea name="pengalaman" class="block mt-1 w-full border-stone-300 focus:border-orange-500 focus:ring-orange-500 rounded-xl shadow-sm pl-4" rows="2"></textarea>
                         </div>
                     </div>
                 </template>
@@ -137,24 +183,24 @@
                     <div class="space-y-4">
                         <div>
                             <x-input-label for="nama_usaha" :value="__('Nama Usaha / Toko')" />
-                            <x-text-input id="nama_usaha" class="block mt-1 w-full" type="text" name="nama_usaha" placeholder="Contoh: Kopi Kenangan" />
+                            <x-text-input id="nama_usaha" class="block mt-1 w-full pl-4" type="text" name="nama_usaha" placeholder="Contoh: Kopi Kenangan" />
                         </div>
                         <div>
                             <x-input-label for="bidang_usaha" :value="__('Bidang Usaha')" />
-                            <x-text-input id="bidang_usaha" class="block mt-1 w-full" type="text" name="bidang_usaha" placeholder="Contoh: Kuliner" />
+                            <x-text-input id="bidang_usaha" class="block mt-1 w-full pl-4" type="text" name="bidang_usaha" placeholder="Contoh: Kuliner" />
                         </div>
                         <div>
                             <x-input-label for="deskripsi" :value="__('Deskripsi Singkat (Opsional)')" />
-                            <textarea name="deskripsi" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="2"></textarea>
+                            <textarea name="deskripsi" class="block mt-1 w-full border-stone-300 focus:border-orange-500 focus:ring-orange-500 rounded-xl shadow-sm pl-4" rows="2"></textarea>
                         </div>
                     </div>
                 </template>
 
                 <div class="pt-4 flex gap-3">
-                    <button type="button" @click="step = 2" class="flex-1 py-3 border border-stone-300 rounded-lg text-stone-700 font-bold hover:bg-stone-50">
+                    <button type="button" @click="step = 2" class="flex-1 py-3 border border-stone-300 rounded-xl text-stone-700 font-bold hover:bg-stone-50">
                         Kembali
                     </button>
-                    <button type="submit" class="flex-[2] py-3 bg-orange-600 rounded-lg text-white font-bold hover:bg-orange-700 shadow-md">
+                    <button type="submit" class="flex-[2] py-3 bg-orange-600 rounded-xl text-white font-bold hover:bg-orange-700 shadow-md">
                         Selesai & Daftar
                     </button>
                 </div>

@@ -1,3 +1,5 @@
+<script src="https://cdn.tailwindcss.com"></script>
+
 <nav x-data="{ open: false }" class="bg-white border-b border-stone-200 sticky top-0 z-50 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -59,7 +61,9 @@
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profil Saya') }}
                         </x-dropdown-link>
-
+                        <x-dropdown-link :href="route('biodata.index')" :active="request()->routeIs('biodata.index')" class="text-stone-600 hover:text-orange-600">
+                            {{ __('Biodata Saya') }}
+                        </x-dropdown-link>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="text-red-600 hover:bg-red-50">

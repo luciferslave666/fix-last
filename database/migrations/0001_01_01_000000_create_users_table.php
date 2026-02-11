@@ -13,6 +13,7 @@ public function up(): void
 {
     Schema::create('users', function (Blueprint $table) {
         $table->id();
+        $table->string('name');
         $table->string('email')->unique();
         $table->string('password');
         // Role untuk membedakan Pelamar dan UMKM (Sesuai Class Diagram User)

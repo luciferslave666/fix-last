@@ -12,7 +12,7 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Menampilkan form edit profil akun (Nama & Email).
      */
     public function edit(Request $request): View
     {
@@ -22,78 +22,30 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's profile information.
+     * Menyimpan perubahan akun (Nama & Email).
      */
-/**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        // Ambil user saat ini
         $user = $request->user();
 
-        // 1. Validasi Dasar (Bawaan Breeze)
-        $request->user()->fill($request->validated());
+        // Isi data user (Name & Email) dari input yang sudah divalidasi
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Jika email berubah, reset verifikasi email
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // Simpan ke tabel USERS saja
+        $user->save();
 
-        // 2. Update Data Tambahan Sesuai Role
-        if ($user->role === 'pelamar') {
-            
-            // Validasi Input Tambahan
-            $request->validate([
-                'no_hp' => 'nullable|string|max:15',
-                'pendidikan_terakhir' => 'nullable|string',
-                'alamat' => 'nullable|string',
-                'cv' => 'nullable|mimes:pdf|max:2048', // Maksimal 2MB
-            ]);
-
-            $dataPelamar = [
-                'nama_lengkap' => $request->name, // Sinkronkan nama user dgn profil
-                'no_hp' => $request->no_hp,
-                'pendidikan_terakhir' => $request->pendidikan_terakhir,
-                'alamat' => $request->alamat,
-            ];
-
-            // Logika Ganti CV
-            if ($request->hasFile('cv')) {
-                // Hapus CV lama jika ada
-                if ($user->profilPelamar->cv && \Illuminate\Support\Facades\Storage::exists('public/' . $user->profilPelamar->cv)) {
-                    \Illuminate\Support\Facades\Storage::delete('public/' . $user->profilPelamar->cv);
-                }
-                
-                // Simpan CV baru
-                $path = $request->file('cv')->store('cv_pelamar', 'public');
-                $dataPelamar['cv'] = $path;
-            }
-
-            // Simpan ke tabel profil_pelamars
-            $user->profilPelamar()->update($dataPelamar);
-
-        } elseif ($user->role === 'umkm') {
-            
-            $request->validate([
-                'nama_usaha' => 'required|string',
-                'alamat' => 'required|string',
-                'no_hp' => 'required|string',
-            ]);
-
-            $user->profilUmkm()->update([
-                'pemilik' => $request->name,
-                'nama_usaha' => $request->nama_usaha,
-                'alamat' => $request->alamat,
-                'no_hp' => $request->no_hp,
-            ]);
-        }
-
+        // Redirect kembali dengan pesan sukses
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**
-     * Delete the user's account.
+     * Menghapus akun.
      */
     public function destroy(Request $request): RedirectResponse
     {

@@ -1,53 +1,20 @@
-@props(['size' => '60', 'color' => 'currentColor'])
-
-<div {{ $attributes->merge(['class' => 'inline-flex items-center gap-2']) }}>
-    {{-- Icon SVG --}}
-    <svg width="{{ $size }}" height="{{ $size }}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
-        {{-- Briefcase background --}}
-        <rect x="15" y="35" width="70" height="50" rx="4" fill="{{ $color }}" opacity="0.1"/>
-        
-        {{-- Briefcase main --}}
-        <path d="M20 40 h60 v40 a5 5 0 0 1 -5 5 h-50 a5 5 0 0 1 -5 -5 v-40 z" 
-              fill="{{ $color }}" opacity="0.2"/>
-        
-        {{-- Briefcase top --}}
-        <rect x="20" y="35" width="60" height="8" rx="2" fill="{{ $color }}"/>
-        
-        {{-- Handle --}}
-        <path d="M35 35 v-8 a5 5 0 0 1 5 -5 h20 a5 5 0 0 1 5 5 v8" 
-              stroke="{{ $color }}" 
-              stroke-width="3" 
-              fill="none"
-              stroke-linecap="round"/>
-        
-        {{-- Lock/Clasp --}}
-        <rect x="47" y="40" width="6" height="4" rx="1" fill="{{ $color }}" opacity="0.6"/>
-        
-        {{-- Person Icon (stylized K) --}}
-        <g transform="translate(42, 52)">
-            {{-- Head --}}
-            <circle cx="8" cy="5" r="4" fill="white"/>
-            {{-- Body as K shape --}}
-            <path d="M5 11 v12 M5 15 l6 -4 M5 17 l6 6" 
-                  stroke="white" 
-                  stroke-width="2.5" 
-                  stroke-linecap="round"
-                  stroke-linejoin="round"/>
-        </g>
-        
-        {{-- Accent dots (representing opportunities) --}}
-        <circle cx="28" cy="55" r="2" fill="{{ $color }}" opacity="0.4"/>
-        <circle cx="72" cy="60" r="2" fill="{{ $color }}" opacity="0.4"/>
-        <circle cx="28" cy="70" r="2" fill="{{ $color }}" opacity="0.4"/>
-    </svg>
+<div {{ $attributes->merge(['class' => 'flex items-center gap-3']) }}>
     
+    {{-- Icon Container (Kotak Orange dengan Shadow Halus) --}}
+    <div class="bg-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-200 flex items-center justify-center transform transition-transform hover:scale-105">
+        {{-- Icon Store / UMKM (SVG Modern) --}}
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+        </svg>
+    </div>
+
     {{-- Text Logo --}}
-    <div class="flex flex-col leading-none">
-        <span class="font-bold text-2xl tracking-tight" style="color: {{ $color }}">
-            Kerjaku
+    <div class="flex flex-col justify-center leading-none">
+        <span class="font-extrabold text-2xl tracking-tight text-stone-900">
+            Kerja<span class="text-orange-600">Ku</span>
         </span>
-        <span class="text-xs text-gray-500 font-medium tracking-wide">
-            Peluang UMKM
+        <span class="text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-1">
+            Mitra UMKM & Pelamar
         </span>
     </div>
 </div>
