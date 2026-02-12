@@ -46,8 +46,25 @@
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-stone-600 bg-white hover:text-orange-600 focus:outline-none transition ease-in-out duration-150">
                             <div class="flex items-center">
-                                <div class="bg-stone-100 p-1.5 rounded-full mr-2">
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                <div class="mr-2">
+                                    @php
+                                        $foto = null;
+                                        if(Auth::user()->role === 'pelamar' && Auth::user()->profilPelamar) {
+                                            $foto = Auth::user()->profilPelamar->foto;
+                                        } elseif(Auth::user()->role === 'umkm' && Auth::user()->profilUmkm) {
+                                            $foto = Auth::user()->profilUmkm->logo;
+                                        }
+                                    @endphp
+
+                                    @if($foto)
+                                        <img src="{{ asset('storage/'.$foto) }}" class="h-8 w-8 rounded-full object-cover border border-stone-200" alt="{{ Auth::user()->name }}">
+                                    @else
+                                        <div class="bg-stone-100 p-1.5 rounded-full">
+                                            <svg class="h-5 w-5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
+                                    @endif
                                 </div>
                                 {{ Auth::user()->name }}
                             </div>
@@ -87,7 +104,22 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            </div>
+
+            @if(Auth::user()->role === 'pelamar')
+                <x-responsive-nav-link :href="route('cari.kerja')" :active="request()->routeIs('cari.kerja')">
+                    {{ __('Cari Kerja') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('lamaran.history')" :active="request()->routeIs('lamaran.history')">
+                    {{ __('Riwayat Lamaran') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if(Auth::user()->role === 'umkm')
+                <x-responsive-nav-link :href="route('lowongan.index')" :active="request()->routeIs('lowongan.*')">
+                    {{ __('Kelola Lowongan') }}
+                </x-responsive-nav-link>
+            @endif
+        </div>
 
         <div class="pt-4 pb-1 border-t border-stone-200">
             <div class="px-4">
@@ -95,7 +127,10 @@
                 <div class="font-medium text-sm text-stone-500">{{ Auth::user()->email }}</div>
             </div>
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">{{ __('Profil') }}</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('profile.edit')">{{ __('Profil Akun') }}</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('biodata.index')" :active="request()->routeIs('biodata.index')">
+                    {{ __('Biodata Saya') }}
+                </x-responsive-nav-link>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="text-red-600">

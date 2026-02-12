@@ -4,6 +4,7 @@
         role: null,
         isLoading: false,
         emailError: '',
+        lastStepChange: 0, // Timestamp to prevent double-skipping
 
         async nextStep() { 
             // Validasi Step 1
@@ -59,9 +60,16 @@
             
             // Jika lolos semua, lanjut step
             this.step++; 
+            this.lastStepChange = Date.now();
         },
         prevStep() { this.step--; },
-        setRole(r) { this.role = r; this.step = 3; }
+        setRole(r) { 
+            // Prevent accidental clicks if step changed very recently (< 500ms)
+            if (Date.now() - this.lastStepChange < 500) return;
+            
+            this.role = r; 
+            this.step = 3; 
+        }
     }">
 
         <div class="mb-8">

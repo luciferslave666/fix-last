@@ -46,13 +46,18 @@ class SeleksiController extends Controller
             abort(403);
         }
 
+        // Cegah perubahan status jika sudah diterima, tidak bisa ditolak lagi
+        if ($lamaran->status == 'diterima' && $request->status == 'ditolak') {
+            return redirect()->back()->with('error', 'Pelamar yang sudah diterima tidak dapat ditolak.');
+        }
+
         $request->validate([
             'status' => 'required|in:diterima,ditolak',
         ]);
 
         $lamaran->update([
             'status' => $request->status,
-            'updated_at' => now(), // Catat waktu keputusan
+            'updated_at' => now(),
         ]);
 
         return redirect()->route('seleksi.index', $lamaran->lowongan_id)
